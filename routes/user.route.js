@@ -3,7 +3,8 @@ import { registeredUser } from "../controller/user.controller.js";
 
 const router = express.Router();
 
-router.get("/", registeredUser);
-router.get("/suraj", registeredUser);
+
+router.post("/register", registeredUser);
+
 
 export default router;
