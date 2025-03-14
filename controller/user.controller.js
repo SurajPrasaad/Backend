@@ -1,8 +1,10 @@
 import User from "../model/User.model.js";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
-const registeredUser = async (req, res) => {
+import bcrypt from "bcrypt"
 
+
+const registeredUser = async (req, res) => {
   let { username, email, password } = req.body;
   let regex = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/;
   if (!username || !email || !password) {
@@ -50,24 +52,25 @@ const registeredUser = async (req, res) => {
     const transport = nodemailer.createTransport({
       host: process.env.MAILTRAP_HOST,
       port: process.env.MAILTRAP_PORT,
+      secure: false, // true for port 465, false for other ports
       auth: {
-        user:process.env.MAILTRAP_USER_NAME,
-        pass: process.env.MAILTRAP_PASSWORD
-      }
+        user: process.env.MAILTRAP_USER_NAME,
+        pass: process.env.MAILTRAP_PASSWORD,
+      },
     });
 
     const mailOptions = {
-        from: process.env.MAILTRAP_SENDER_EMAIL ,// sender address
-        to: User.email, // list of receivers
-        subject: "Hello Verify ✔", // Subject line
-        text: `Please Click the following link : ${process.BASE_URI}/api/v1/users/verify/${token}`, // plain text body
-        html: "<b>Hello world? </b>", // html body
-    }
-    const result = await transport.sendMail(mailOptions)
-    if(result){
-      console.log("Email Send")
-    }else{
-      console.log("Email not send")
+      from: process.env.MAILTRAP_SENDER_EMAIL, // sender address
+      to: user.email, // list of receivers
+
+      subject: "Hello Verify ✔", // Subject line
+      text: `Please Click the following link : ${process.env.BASE_URI}/api/v1/users/verify/${token}`, // plain text body
+    };
+    const result = await transport.sendMail(mailOptions);
+    if (result) {
+      console.log(result);
+    } else {
+      console.log("Email not send");
     }
   } catch (error) {
     return res.status(400).json({
@@ -77,4 +80,33 @@ const registeredUser = async (req, res) => {
   res.send(` Hello ${username} 💖`);
 };
 
-export { registeredUser };
+const verifyUser = async(req,res)=>{
+  //get token from url
+  //validate
+  // find user based on token
+  //if not
+  // set isVerified field to true
+  // remove verification token
+  // save
+  //return response
+
+  const {token} = req.params
+  
+  if(!token){
+    return res.status(400).json({
+      message: "Invalid Token!",
+    });
+  }
+  let user = await User.findOne({verificationToken:token})
+  if(!user){
+    return res.status(400).json({
+      message: "User dosen't exist!",
+    });
+  }
+  user.isVerified = true
+  user.verificationToken=null
+  console.log(user)
+  await user.save();
+}
+
+export { registeredUser,verifyUser };
